@@ -1,5 +1,7 @@
 const express = require("express")
 const bodyParser = require('body-parser')
+const axios = require("axios")
+require('dotenv').config()
 
 const app = express()
 
@@ -89,10 +91,54 @@ app.delete('/user/:id', (req, res) => {
     })
 })
 
+app.get('/clima/:cidade', (req, res) => {
+    // verifica se uma cidade foi informada
+    const cidade = req.params.cidade
+
+    if (!cidade) {
+        res.sendStatus(404)
+        return
+    }
+
+    const apiUrl = "https://api.openweathermap.org/data/2.5/weather?"
+    const cidadeParam = `q=${cidade}`
+    const apiKey = `&appid=${process.env.MY_API_KEY}&units=metric&lang=pt_br`
+
+    console.log(apiUrl+cidadeParam+apiKey)
+
+    axios
+        .get(apiUrl+cidadeParam+apiKey)
+        .then(result => {
+            res.send(formatador(result.data))
+        })
+        .catch(e => {
+            res.status(404)
+        })
+})
+
+app.get('/piadas', (req, res) => {
+    axios
+        .get('https://api.chucknorris.io/jokes/random')
+        .then(result => {
+            res.send(result.data.value)
+        })
+})
+
 
 app.listen(port, () => {
     console.log("o servidor está rodando no link http://localhost:" + port)
 })
+
+
+const formatador = (clima) => {
+    const descricao = clima.weather[0].description
+    const temperatura = clima.main.temp
+    const sensacao = clima.main.feels_like
+    const umidade = clima.main.humidity
+    const cidade = clima.name
+
+    return `O clima em ${cidade} está ${descricao}. A temperatura está em ${temperatura} célsius, com sensação térmica de ${sensacao} célsius`
+}
 
 /*
 localhost:5000 (url) - domínio
@@ -103,5 +149,13 @@ localhost:5000 (url) - domínio
 /order
 /order/1
 /user/1/order
+
+
+    return axios
+        .get(apiUrl+cidadeParam+apiKey)
+        .then((result) => {
+            console.log("dados retornados", result)
+            res.json(result.data)
+        })
 
 */
